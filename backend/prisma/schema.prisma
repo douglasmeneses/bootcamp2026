@@ -1,0 +1,105 @@
+// ---------------------------------------------------------
+// CONFIGURAÇÕES GERAIS DO PRISMA
+// ---------------------------------------------------------
+
+// O "generator" define o tipo de client a ser construído quando rodamos `prisma generate`.
+// No nosso caso, gera o cliente JavaScript (@prisma/client) para usarmos no Node.js.
+generator client {
+  provider = "prisma-client-js"
+}
+
+// O "datasource" especifica a conexão com o banco de dados.
+// - provider: define o SGBD (gerenciador de banco). Aqui usamos "sqlite", que é um banco leve baseado em arquivo, ótimo para desenvolvimento local.
+// - url: o caminho para o arquivo do banco. É lido da variável de ambiente DATABASE_URL definida no .env.
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------
+// MODELOS / TABELAS DO BANCO DE DADOS
+// ---------------------------------------------------------
+
+// Modelo que representa a tabela de Usuários do sistema
+model Usuario {
+  // @id indica que este campo é a Chave Primária (Primary Key) da tabela.
+  // @default(autoincrement()) faz com que o banco gere o ID automaticamente (1, 2, 3...) ao cadastrar.
+  id            Int       @id @default(autoincrement())
+  
+  nome          String
+  
+  // @unique cria um índice único no banco de dados. Isso impede que dois usuários se cadastrem com o mesmo e-mail.
+  email         String    @unique
+  
+  senha         String
+  
+  telefone      String
+  
+  // @unique também impede o cadastro de CPFs duplicados.
+  cpf           String    @unique
+  
+  // @default(now()) define a data de criação com a hora atual no momento do insert.
+  // @map("dt_criacao") mapeia este atributo para uma coluna chamada "dt_criacao" no banco físico (mantendo convenções snake_case no SQL).
+  dtCriacao     DateTime  @default(now()) @map("dt_criacao")
+  
+  // @updatedAt atualiza esse campo automaticamente sempre que o registro for modificado (update).
+  dtAtualizacao DateTime  @updatedAt @map("dt_atualizacao")
+  
+  // @default(false) define que novos usuários não serão administradores por padrão.
+  eAdmin        Boolean   @default(false) @map("e_admin")
+  
+  // Relacionamento 1-para-Muitos: Um usuário pode ter várias Reservas cadastradas.
+  // Note que "reservas" é um campo virtual do Prisma; ele não se transforma em coluna no banco físico.
+  reservas      Reserva[]
+
+  // @@map define o nome real da tabela física no banco de dados. Por padrão o Prisma usaria "Usuario", aqui virará "usuarios".
+  @@map("usuarios")
+}
+
+// Modelo que representa as salas disponíveis no coworking
+model Sala {
+  id            Int       @id @default(autoincrement())
+  nome          String
+  capacidade    Int
+  
+  // O tipo com "?" (String?) indica que este campo é opcional (Nullable no banco).
+  descricao     String?
+  
+  precoLocacao  Float     @map("preco_locacao")
+  dtCriacao     DateTime  @default(now()) @map("dt_criacao")
+  dtAtualizacao DateTime  @updatedAt @map("dt_atualizacao")
+  
+  // Relacionamento 1-para-Muitos: Uma sala pode ter várias Reservas cadastradas.
+  reservas      Reserva[]
+
+  @@map("salas")
+}
+
+// Modelo intermediário para gerenciar as Reservas de salas pelos usuários
+model Reserva {
+  id        Int      @id @default(autoincrement())
+  
+  // Representa o dia da reserva (data sem a hora em termos práticos de lógica)
+  dia       DateTime
+  
+  // Turno da reserva (ex: MANHA, TARDE, NOITE)
+  turno     String
+  
+  dtCriacao DateTime  @default(now()) @map("dt_criacao")
+  
+  // Campos de Chave Estrangeira (Foreign Keys) físicas no banco
+  idUsuario Int      @map("id_usuario")
+  idSala    Int      @map("id_sala")
+  
+  // Configuração do relacionamento de Usuário:
+  // - fields: [idUsuario] indica qual campo local é a Chave Estrangeira.
+  // - references: [id] indica que ela aponta para o campo 'id' do modelo Usuario.
+  // - onDelete: Cascade significa que se o Usuário for deletado, todas as suas reservas serão excluídas automaticamente.
+  usuario   Usuario  @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  
+  // Configuração do relacionamento de Sala:
+  // - onDelete: Cascade significa que se a Sala for deletada, todas as reservas dela também somem automaticamente.
+  sala      Sala     @relation(fields: [idSala], references: [id], onDelete: Cascade)
+
+  @@map("reservas")
+}
