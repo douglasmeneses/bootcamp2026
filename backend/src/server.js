@@ -1,6 +1,7 @@
 import 'dotenv/config'; // Carrega as variáveis de ambiente do arquivo .env (ex: DATABASE_URL, PORT) na memória
 import express from 'express';
 import cors from 'cors';
+import { ZodError } from 'zod';
 import routes from './routes/index.js';
 
 /**
@@ -44,21 +45,22 @@ app.use('/api', routes);
  * Como o Express reconhece?
  * Se uma função middleware receber exatamente 4 argumentos `(err, req, res, next)`, o Express a identifica
  * automaticamente como um middleware de tratamento de erros.
- * 
- * Para que serve?
- * Em vez de colocar blocos `try/catch` gigantes com envio de respostas HTTP em todo lugar,
- * nós apenas capturamos o erro e o enviamos adiante com `next(err)`. Este middleware intercepta todos
- * esses erros disparados ao longo do fluxo e centraliza a resposta, mantendo um formato padrão.
  */
 app.use((err, req, res, next) => {
   // Exibe o erro no console do servidor para fins de depuração (debug)
   console.error('Erro detectado na aplicação:', err);
 
+  // Tratamento especial para erros de validação do Zod
+  if (err instanceof ZodError || err?.name === 'ZodError') {
+    const mensagemFormata = err.errors ? err.errors.map(e => e.message).join(' ') : err.message;
+    return res.status(400).json({
+      message: mensagemFormata || 'Dados inválidos na requisição.'
+    });
+  }
+
   // Formato padrão de resposta de erro. Retorna o status de erro específico do objeto ou 500 (Erro Interno).
   return res.status(err.status || 500).json({
-    error: true,
-    message: err.message || 'Erro interno no servidor.',
-    code: err.code || 'INTERNAL_SERVER_ERROR'
+    message: err.message || 'Erro interno no servidor.'
   });
 });
 
@@ -71,9 +73,7 @@ app.use((err, req, res, next) => {
  */
 app.use((req, res) => {
   return res.status(404).json({
-    error: true,
-    message: `Rota ${req.originalUrl} não encontrada.`,
-    code: 'NOT_FOUND'
+    message: `Rota ${req.originalUrl} não encontrada.`
   });
 });
 

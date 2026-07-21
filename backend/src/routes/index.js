@@ -1,5 +1,8 @@
 import { Router } from "express";
 import usuarioRoutes from "./usuarioRoutes.js";
+import salaRoutes from "./salaRoutes.js";
+import reservaRoutes from "./reservaRoutes.js";
+import authRoutes from "./authRoutes.js";
 
 /**
  * ROTEADOR CENTRAL (Index Router)
@@ -44,14 +47,11 @@ router.get("/", (req, res) => {
 });
 
 /**
- * ROTAS DE USUÁRIOS
- * 
- * Explicação:
- * - `router.use("/usuarios", usuarioRoutes)` significa que qualquer requisição que comece com 
- *   `/usuarios` será repassada e tratada pelas rotas definidas no arquivo `usuarioRoutes.js`.
- * - Como este roteador principal é montado no `server.js` sob o prefixo `/api`, o caminho final
- *   para acessar os usuários será `/api/usuarios`.
+ * ROTAS DOS MÓDULOS DA APLICAÇÃO
  */
+router.use("/auth", authRoutes);
 router.use("/usuarios", usuarioRoutes);
+router.use("/salas", salaRoutes);
+router.use("/reservas", reservaRoutes);
 
 export default router;
