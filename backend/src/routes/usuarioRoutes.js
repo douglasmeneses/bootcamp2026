@@ -1,5 +1,7 @@
 import { Router } from "express";
 import * as usuarioController from "../controllers/usuarioController.js";
+import { validate } from "../middlewares/validate.js";
+import { createUsuarioSchema, updateUsuarioSchema } from "../schemas/usuarioSchema.js";
 
 /**
  * ROTAS DE USUÁRIOS
@@ -21,7 +23,7 @@ const router = Router();
  * Rota: POST /api/usuarios
  * Corpo esperado (JSON): { nome, email, senha, telefone, cpf }
  */
-router.post("/", usuarioController.create);
+router.post("/", validate(createUsuarioSchema), usuarioController.create);
 
 /**
  * Listar todos os usuários cadastrados
@@ -44,7 +46,7 @@ router.get("/:id", usuarioController.getById);
  * Rota: PUT /api/usuarios/:id
  * Corpo esperado (JSON): campos que deseja alterar (nome, email, senha, telefone, cpf)
  */
-router.put("/:id", usuarioController.update);
+router.put("/:id", validate(updateUsuarioSchema), usuarioController.update);
 
 /**
  * Excluir permanentemente um usuário pelo ID
