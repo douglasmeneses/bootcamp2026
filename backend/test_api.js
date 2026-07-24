@@ -187,7 +187,8 @@ async function runTests() {
       });
       json = await res.json();
       const createdReservaId = json.id;
-      logTest('POST /api/reservas (Criar)', res.status === 201 && !!createdReservaId, `[ID: ${createdReservaId}]`);
+      const dataValida = json.dia === '2026-11-15';
+      logTest('POST /api/reservas (Criar)', res.status === 201 && !!createdReservaId && dataValida, `[ID: ${createdReservaId}, Dia: ${json.dia}]`);
 
       // Testar conflito de reserva (mesma sala, dia e turno)
       res = await fetch(`${BASE_URL}/reservas`, {

@@ -1,20 +1,21 @@
 import { ZodError } from "zod";
 
 /**
- * MIDDLEWARE DE VALIDAÇÃO REUTILIZÁVEL (Zod)
+ * Higher-Order Function que gera um Middleware de Validação utilizando o Zod.
  * 
- * O que é?
- * É uma função utilitária que recebe um Schema do Zod e retorna um Middleware do Express.
+ * 💡 Explicação para iniciantes:
+ * Um "Middleware" no Express é uma função intermediária que roda ANTES de a requisição chegar ao Controller.
+ * Esta função é uma "Higher-Order Function" (função que retorna outra função):
+ * 1. Ela recebe o `schema` (as regras de validação definidas com a biblioteca Zod).
+ * 2. Retorna a função do middleware `(req, res, next)` que o Express executa a cada requisição.
  * 
- * Por que usar?
- * Em vez de repetirmos blocos `if (!campo) throw new Error(...)` em cada controller ou service,
- * usamos este middleware na rota para garantir que os dados cheguem limpos e validados!
+ * 🛠️ Fluxo de Execução:
+ * - `schema.parse(req.body)`: Valida e transforma os dados do corpo da requisição (`req.body`).
+ * - Se os dados forem VÁLIDOS: Substitui `req.body` pelos dados higienizados e chama `next()` para continuar para o Controller.
+ * - Se os dados forem INVÁLIDOS: Lança um erro que é capturado pelo `catch(error)` e enviado ao `next(error)`, acionando o tratamento de erros global.
  * 
- * Como funciona?
- * 1. Intercepta os dados enviados pelo cliente no corpo da requisição (`req.body`).
- * 2. Valida contra o schema fornecido usando `schema.parse(req.body)`.
- * 3. Se estiver tudo OK: atualiza `req.body` com os dados sanitizados e chama `next()`.
- * 4. Se houver erro: passa o erro para o Express tratar centralizadamente.
+ * @param {import("zod").ZodSchema} schema - O schema do Zod com as regras dos campos esperados
+ * @returns {import("express").RequestHandler} Função de middleware pronta para uso no Express
  */
 export function validate(schema) {
   return (req, res, next) => {

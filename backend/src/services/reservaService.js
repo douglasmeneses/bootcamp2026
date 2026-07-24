@@ -1,13 +1,17 @@
 import prisma from "../config/prisma.js";
+import { normalizarData, formatarReserva } from "../utils/dateUtils.js";
 
 /**
- * CAMADA DE SERVIÇOS - RESERVAS (reservaService)
+ * Serviço de Reservas (reservaService)
  * 
- * Regras de negócio para gerenciar reservas de salas de coworking.
- * As validações do formato dos dados são tratadas pelo Zod no middleware.
+ * 💡 Explicação para iniciantes:
+ * Este serviço gerencia as regras de negócio mais complexas do sistema:
+ * - Valida a existência prévia do usuário e da sala no banco de dados.
+ * - Garante a regra de conflito: **Não permite que duas reservas ocupem a mesma sala no mesmo dia e turno**.
+ * - Garante que dados relacionais (usuário e sala) sejam incluídos na resposta formatada.
  */
 
-// Campos selecionados do usuário ao incluir detalhes nas reservas
+// Filtro de campos do Usuário para ocultar a senha e retornar apenas dados públicos
 const usuarioSelect = {
   select: {
     id: true,
@@ -18,7 +22,22 @@ const usuarioSelect = {
 };
 
 /**
- * CRIA UMA NOVA RESERVA
+ * Cria uma nova reserva após verificar a existência do usuário, da sala e a ausência de conflitos de horário.
+ * 
+ * 🛠️ Passo a Passo da Regra de Negócio:
+ * 1. Verifica se `idUsuario` existe (404 se não existir).
+ * 2. Verifica se `idSala` existe (404 se não existir).
+ * 3. Normaliza a data para meia-noite no fuso horário local.
+ * 4. Consulta se a sala já tem reserva no mesmo dia e turno (409 Conflict se houver).
+ * 5. Cria no banco usando `prisma.reserva.create` incluindo os dados do usuário e da sala.
+ * 
+ * @param {Object} data - Dados da reserva
+ * @param {number} data.idUsuario - ID do usuário que está reservando
+ * @param {number} data.idSala - ID da sala desejada
+ * @param {string} data.dia - Data da reserva ("YYYY-MM-DD")
+ * @param {string} data.turno - Turno escolhido ("MANHA" | "TARDE" | "NOITE")
+ * @returns {Promise<Object>} A reserva criada com dados formatados
+ * @throws {Error} Erro 404 (Usuário/Sala não encontrado) ou 409 (Conflito de reserva)
  */
 export async function createReserva(data) {
   const { idUsuario, idSala, dia, turno } = data;
@@ -43,9 +62,8 @@ export async function createReserva(data) {
     throw error;
   }
 
-  // 3. Normalizar data do agendamento (00:00:00.000)
-  const dataReserva = new Date(dia);
-  dataReserva.setHours(0, 0, 0, 0);
+  // 3. Normalizar data para meia-noite local
+  const dataReserva = normalizarData(dia);
 
   // 4. Verificar conflito de agendamento (mesma sala, dia e turno)
   const reservaConflito = await prisma.reserva.findFirst({
@@ -63,7 +81,7 @@ export async function createReserva(data) {
   }
 
   // 5. Criar reserva no banco de dados
-  return await prisma.reserva.create({
+  const novaReserva = await prisma.reserva.create({
     data: {
       idUsuario,
       idSala,
@@ -75,22 +93,32 @@ export async function createReserva(data) {
       sala: true,
     },
   });
+
+  return formatarReserva(novaReserva);
 }
 
 /**
- * BUSCA TODAS AS RESERVAS
+ * Busca todas as reservas registradas no sistema, incluindo os dados completos da sala e do usuário.
+ * 
+ * @returns {Promise<Array>} Lista de reservas com datas formatadas
  */
 export async function getAllReservas() {
-  return await prisma.reserva.findMany({
+  const reservas = await prisma.reserva.findMany({
     include: {
       usuario: usuarioSelect,
       sala: true,
     },
   });
+
+  return reservas.map(formatarReserva);
 }
 
 /**
- * BUSCA RESERVA POR ID
+ * Busca uma reserva específica pelo seu ID.
+ * 
+ * @param {number} id - Identificador único da reserva
+ * @returns {Promise<Object>} Objeto da reserva com relacionamentos
+ * @throws {Error} Erro 404 Not Found se não for encontrada
  */
 export async function getReservaById(id) {
   const reserva = await prisma.reserva.findUnique({
@@ -107,99 +135,15 @@ export async function getReservaById(id) {
     throw error;
   }
 
-  return reserva;
+  return formatarReserva(reserva);
 }
 
 /**
- * ATUALIZA UMA RESERVA POR ID
- */
-export async function updateReserva(id, data) {
-  const { idUsuario, idSala, dia, turno } = data;
-
-  // 1. Verificar se a reserva existe
-  const reservaExistente = await prisma.reserva.findUnique({
-    where: { id },
-  });
-
-  if (!reservaExistente) {
-    const error = new Error("Reserva não encontrada.");
-    error.status = 404;
-    throw error;
-  }
-
-  const updateData = {};
-
-  // 2. Se alterar usuário, verificar existência no banco
-  if (idUsuario !== undefined) {
-    const usuarioExistente = await prisma.usuario.findUnique({
-      where: { id: idUsuario },
-    });
-    if (!usuarioExistente) {
-      const error = new Error("Usuário informado não foi encontrado.");
-      error.status = 404;
-      throw error;
-    }
-    updateData.idUsuario = idUsuario;
-  }
-
-  // 3. Se alterar sala, verificar existência no banco
-  if (idSala !== undefined) {
-    const salaExistente = await prisma.sala.findUnique({
-      where: { id: idSala },
-    });
-    if (!salaExistente) {
-      const error = new Error("Sala informada não foi encontrada.");
-      error.status = 404;
-      throw error;
-    }
-    updateData.idSala = idSala;
-  }
-
-  // 4. Se alterar a data
-  if (dia !== undefined) {
-    const dataReserva = new Date(dia);
-    dataReserva.setHours(0, 0, 0, 0);
-    updateData.dia = dataReserva;
-  }
-
-  // 5. Se alterar o turno
-  if (turno !== undefined) {
-    updateData.turno = turno;
-  }
-
-  // 6. Verificar conflito de agendamento (ignora a própria reserva sendo editada)
-  const targetSalaId = updateData.idSala ?? reservaExistente.idSala;
-  const targetDia = updateData.dia ?? reservaExistente.dia;
-  const targetTurno = updateData.turno ?? reservaExistente.turno;
-
-  const conflito = await prisma.reserva.findFirst({
-    where: {
-      idSala: targetSalaId,
-      dia: targetDia,
-      turno: targetTurno,
-      id: { not: id },
-    },
-  });
-
-  if (conflito) {
-    const error = new Error("Esta sala já possui outra reserva confirmada para o dia e turno informados.");
-    error.status = 409;
-    throw error;
-  }
-
-  // 7. Atualizar reserva no banco
-  return await prisma.reserva.update({
-    where: { id },
-    data: updateData,
-    include: {
-      usuario: usuarioSelect,
-      sala: true,
-    },
-  });
-}
-
-/**
- * EXCLUI UMA RESERVA POR ID
+ * Cancela/Exclui uma reserva permanentemente pelo ID.
+ * 
+ * @param {number} id - Identificador único da reserva
+ * @returns {Promise<{success: boolean, message: string}>} Mensagem de confirmação
+ * @throws {Error} Erro 404 Not Found se a reserva não existir
  */
 export async function deleteReserva(id) {
   const reservaExistente = await prisma.reserva.findUnique({

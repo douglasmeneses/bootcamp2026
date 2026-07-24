@@ -99,7 +99,7 @@ async function main() {
   // Calculamos a data de amanhã para a reserva de teste
   const amanha = new Date();
   amanha.setDate(amanha.getDate() + 1);
-  amanha.setHours(0, 0, 0, 0); // Zera as horas, minutos e segundos (salva apenas a data base)
+  amanha.setHours(0, 0, 0, 0);
 
   await prisma.reserva.create({
     data: {

@@ -1,37 +1,29 @@
 import prisma from "../config/prisma.js";
 
 /**
- * CAMADA DE SERVIÇOS (Services)
+ * Serviço de Usuários (usuarioService)
  * 
- * O que é?
- * É onde colocamos a "Lógica de Negócios" da nossa aplicação.
- * 
- * Por que usar esta camada? (Arquitetura em Camadas / Layered Architecture)
- * - Separação de Conceitos: O Controller lida apenas com requisições HTTP (req, res), validações de rota e envio de respostas. O Service lida com regras de negócio e comunicação direta com o Banco de Dados (via ORM Prisma).
- * - Reutilização: Vários controllers ou tarefas agendadas podem usar as mesmas funções de serviço sem duplicar código.
- * - Testabilidade: Fica muito mais fácil escrever testes unitários para a lógica sem ter que simular toda a infraestrutura HTTP de requisições.
- * 
- * TRADE-OFFS da Camada de Serviço:
- * - Prós: Código muito mais limpo, modular, escalável e fácil de testar.
- * - Contras: Para projetos extremamente simples (CRUDs básicos), pode parecer que estamos apenas escrevendo uma camada a mais que "repassa" dados do Controller para o Banco de Dados (código boilerplate).
+ * 💡 Explicação para iniciantes (Arquitetura em Camadas):
+ * - **Separação de Conceitos**: O Controller lida apenas com requisições HTTP (req, res), validações de rota e envio de respostas. O Service lida com regras de negócio e comunicação direta com o Banco de Dados (via ORM Prisma).
+ * - **Reutilização**: Vários controllers ou tarefas agendadas podem usar as mesmas funções de serviço sem duplicar código.
+ * - **Testabilidade**: Fica muito mais fácil escrever testes unitários para a lógica sem ter que simular a infraestrutura HTTP.
  */
 
 /**
- * CRIA UM NOVO USUÁRIO
+ * Cria um novo usuário no banco de dados após validar e-mail e CPF únicos.
  * 
- * Explicação para iniciantes:
- * - Usamos `async/await` porque consultas ao banco de dados são operações assíncronas (demoram um tempo para rede/disco responderem).
- * - Lançamos erros (`throw error`) com propriedades adicionais (.status e .code) para que o middleware de erros do Express intercepte e responda com o status HTTP correto para o cliente.
+ * 💡 Explicação para iniciantes:
+ * - Usamos `async/await` porque consultas ao banco de dados são operações assíncronas (demoram um tempo para a rede/disco responderem).
+ * - Lançamos erros (`throw error`) com propriedades `.status` (ex: 409 Conflict) para que o middleware de erros do Express intercepte e responda ao cliente com o código HTTP adequado.
  * 
- * Segurança (AVISO IMPORTANTE DE SEGURANÇA):
- * - Atualmente, o campo `senha` está sendo salvo em TEXTO PURO no banco de dados. 
- * - TRADE-OFF / SEGURANÇA: Salvar senhas sem criptografia é uma falha grave. Deveríamos usar uma biblioteca como `bcrypt` para gerar um hash da senha antes de salvá-la no banco.
- * 
- * Validação no App vs Validação no Banco de Dados:
- * - Fazemos a verificação se o e-mail ou CPF já existem no banco usando JavaScript (`prisma.usuario.findUnique`) antes de tentar criar.
- * - TRADE-OFF:
- *   - Fazer no App: Permite retornar erros amigáveis e específicos de forma simples.
- *   - Fazer no Banco (Unique Constraints): É o mecanismo de segurança definitivo do banco de dados que previne duplicidade. Em sistemas concorrentes (duas requisições idênticas enviadas exatamente no mesmo milissegundo), a validação em JS pode falhar (Race Condition), mas a do banco sempre segurará a barra. O ideal é usar ambas!
+ * @param {Object} data - Dados do usuário a ser cadastrado
+ * @param {string} data.nome - Nome completo
+ * @param {string} data.email - E-mail único
+ * @param {string} data.senha - Senha de acesso
+ * @param {string} [data.telefone] - Telefone de contato
+ * @param {string} data.cpf - CPF único
+ * @returns {Promise<Object>} Objeto do usuário criado no banco de dados
+ * @throws {Error} Erro HTTP 409 Conflict se e-mail ou CPF já estiverem cadastrados
  */
 export async function createUsuario(data) {
   const { nome, email, senha, telefone, cpf } = data;
@@ -59,31 +51,30 @@ export async function createUsuario(data) {
   }
 
   // 3. Criar usuário (eAdmin assume o valor default do banco: false)
-  // TRADE-OFF: Aqui enviamos diretamente a senha pura do usuário. 
-  // TODO: Fazer hash da senha antes de persistir, ex: `senha: await bcrypt.hash(senha, 10)`
   return await prisma.usuario.create({
     data: { nome, email, senha, telefone, cpf },
   });
 }
 
 /**
- * BUSCA TODOS OS USUÁRIOS
+ * Retorna a lista de todos os usuários cadastrados no banco de dados.
  * 
- * TRADE-OFFS / PAGINAÇÃO:
- * - Prós: Extremamente simples de entender e implementar (`findMany`).
- * - Contras: Traz TODOS os registros do banco de uma vez. Se o banco tiver 100.000 usuários, essa chamada causará problemas de performance (lentidão e alto consumo de memória).
- * - Melhoria futura: Adicionar paginação (ex: limites e offsets como `skip: 0, take: 10`) nas consultas de listagem à medida que a aplicação crescer.
+ * @returns {Promise<Array>} Lista de usuários encontrados
  */
 export async function getAllUsuarios() {
   return await prisma.usuario.findMany();
 }
 
 /**
- * BUSCA USUÁRIO POR ID
+ * Busca os dados de um único usuário através do seu ID.
  * 
- * Explicação para iniciantes:
+ * 💡 Explicação para iniciantes:
  * - Se o banco não encontrar o usuário com o ID fornecido, o Prisma retorna `null`.
- * - Sempre verifique a existência do registro retornado. Se for `null`, lance um erro de "não encontrado" imediatamente.
+ * - Sempre verifique a existência do registro retornado. Se for `null`, lance um erro de "não encontrado" (HTTP 404).
+ * 
+ * @param {number} id - Identificador único do usuário
+ * @returns {Promise<Object>} Dados do usuário encontrado
+ * @throws {Error} Erro HTTP 404 Not Found se o usuário não for encontrado
  */
 export async function getUsuarioById(id) {
   const usuario = await prisma.usuario.findUnique({
@@ -92,7 +83,7 @@ export async function getUsuarioById(id) {
 
   if (!usuario) {
     const error = new Error("Usuário não encontrado.");
-    error.status = 404; // HTTP 404: Not Found (Recurso não encontrado)
+    error.status = 404; // HTTP 404: Not Found
     error.code = "USER_NOT_FOUND";
     throw error;
   }
@@ -101,14 +92,17 @@ export async function getUsuarioById(id) {
 }
 
 /**
- * ATUALIZA USUÁRIO POR ID
+ * Atualiza as informações de um usuário existente pelo seu ID.
  * 
- * Explicação para iniciantes:
- * - Fazemos verificações condicionais (`if (email && email !== usuario.email)`) para evitar fazer queries desnecessárias de duplicidade caso o campo de e-mail ou CPF não tenha sido enviado na atualização ou não tenha mudado.
- * 
- * TRADE-OFF / PATCH vs PUT:
- * - Esse método atualiza os campos que forem enviados. Se usássemos um padrão purista de PUT, teríamos que exigir que todo o objeto do usuário fosse enviado novamente. 
- * - Usar validações seletivas como as abaixo nos aproxima do comportamento de um PATCH (atualização parcial).
+ * @param {number} id - ID do usuário a ser atualizado
+ * @param {Object} data - Objeto contendo os campos a modificar
+ * @param {string} [data.nome] - Novo nome
+ * @param {string} [data.email] - Novo e-mail
+ * @param {string} [data.senha] - Nova senha
+ * @param {string} [data.telefone] - Novo telefone
+ * @param {string} [data.cpf] - Novo CPF
+ * @returns {Promise<Object>} Objeto do usuário atualizado
+ * @throws {Error} Erro HTTP 404 (Não encontrado) ou HTTP 409 (Conflito de e-mail/CPF)
  */
 export async function updateUsuario(id, data) {
   const { nome, email, senha, telefone, cpf } = data;
@@ -150,7 +144,7 @@ export async function updateUsuario(id, data) {
     }
   }
 
-  // 4. Executar a atualização (sem modificar eAdmin)
+  // 4. Executar a atualização no banco de dados
   return await prisma.usuario.update({
     where: { id },
     data: { nome, email, senha, telefone, cpf },
@@ -158,15 +152,11 @@ export async function updateUsuario(id, data) {
 }
 
 /**
- * DELETA USUÁRIO POR ID
+ * Remove um usuário permanentemente do banco de dados (Hard Delete).
  * 
- * TRADE-OFFS / HARD DELETE vs SOFT DELETE:
- * - Hard Delete (Físico): Remove permanentemente o registro da tabela usando `prisma.usuario.delete`.
- *   - Prós: Libera espaço no banco de dados imediatamente; é a implementação mais simples.
- *   - Contras: Perda definitiva de dados históricos. Se o usuário deletar a conta por engano, não é possível recuperar sem um backup completo. Além disso, se houver chaves estrangeiras vinculadas a este usuário, a deleção falhará (ou causará deleção em cascata).
- * - Soft Delete (Lógico): Em vez de apagar, mudamos uma coluna (ex: `deletadoEm: DateTime` ou `ativo: Boolean`). 
- *   - Prós: Mantém histórico e integridade referencial; permite restaurar contas.
- *   - Contras: Aumenta o volume de dados ativos no banco e todas as outras consultas (getAll, getById) precisam ser modificadas para filtrar registros excluídos (ex: `where: { ativo: true }`).
+ * @param {number} id - Identificador único do usuário a ser excluído
+ * @returns {Promise<{success: boolean, message: string}>} Mensagem de confirmação de exclusão
+ * @throws {Error} Erro HTTP 404 Not Found se o usuário não for encontrado
  */
 export async function deleteUsuario(id) {
   // 1. Verificar se o usuário existe
@@ -181,7 +171,7 @@ export async function deleteUsuario(id) {
     throw error;
   }
 
-  // 2. Deletar usuário (Hard Delete)
+  // 2. Deletar usuário do banco
   await prisma.usuario.delete({
     where: { id },
   });

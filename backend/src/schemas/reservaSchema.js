@@ -32,5 +32,3 @@ export const createReservaSchema = z.object({
     errorMap: () => ({ message: "O turno deve ser MANHA, TARDE ou NOITE." }),
   }),
 });
-
-export const updateReservaSchema = createReservaSchema.partial();
