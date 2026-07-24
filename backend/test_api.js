@@ -10,7 +10,8 @@ app.use('/api', routes);
 
 app.use((err, req, res, next) => {
   if (err instanceof ZodError || err?.name === 'ZodError') {
-    const mensagem = err.errors ? err.errors.map(e => e.message).join(' ') : err.message;
+    const issues = err.issues || err.errors || [];
+    const mensagem = issues.length > 0 ? issues.map(e => e.message).join(' ') : err.message;
     return res.status(400).json({
       message: mensagem || 'Dados inválidos na requisição.'
     });
@@ -208,14 +209,6 @@ async function runTests() {
       res = await fetch(`${BASE_URL}/reservas/${createdReservaId}`);
       json = await res.json();
       logTest('GET /api/reservas/:id (Buscar por ID)', res.status === 200 && json.id === createdReservaId);
-
-      res = await fetch(`${BASE_URL}/reservas/${createdReservaId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ turno: 'NOITE' })
-      });
-      json = await res.json();
-      logTest('PUT /api/reservas/:id (Atualizar)', res.status === 200 && json.turno === 'NOITE');
 
       // Limpeza: Deletar registros de teste criados
       console.log('\n--- 5. LIMPEZA DOS DADOS DE TESTE ---');

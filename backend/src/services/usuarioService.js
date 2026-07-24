@@ -20,7 +20,7 @@ import prisma from "../config/prisma.js";
  * @param {string} data.nome - Nome completo
  * @param {string} data.email - E-mail único
  * @param {string} data.senha - Senha de acesso
- * @param {string} [data.telefone] - Telefone de contato
+ * @param {string} data.telefone - Telefone de contato
  * @param {string} data.cpf - CPF único
  * @returns {Promise<Object>} Objeto do usuário criado no banco de dados
  * @throws {Error} Erro HTTP 409 Conflict se e-mail ou CPF já estiverem cadastrados

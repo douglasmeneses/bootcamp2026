@@ -54,7 +54,8 @@ app.use((err, req, res, next) => {
 
   // Tratamento especial para erros de validação do Zod
   if (err instanceof ZodError || err?.name === 'ZodError') {
-    const mensagemFormata = err.errors ? err.errors.map(e => e.message).join(' ') : err.message;
+    const issues = err.issues || err.errors || [];
+    const mensagemFormata = issues.length > 0 ? issues.map(e => e.message).join(' ') : err.message;
     return res.status(400).json({
       message: mensagemFormata || 'Dados inválidos na requisição.'
     });

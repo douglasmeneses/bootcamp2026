@@ -24,7 +24,12 @@ export const createReservaSchema = z.object({
 
   dia: z
     .string({ required_error: "Campos 'idUsuario', 'idSala', 'dia' e 'turno' são obrigatórios." })
-    .refine((val) => !isNaN(Date.parse(val)), {
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "A data informada no campo 'dia' é inválida.")
+    .refine((val) => {
+      const [ano, mes, dia] = val.split("-").map(Number);
+      const data = new Date(ano, mes - 1, dia);
+      return data.getFullYear() === ano && data.getMonth() + 1 === mes && data.getDate() === dia;
+    }, {
       message: "A data informada no campo 'dia' é inválida.",
     }),
 
