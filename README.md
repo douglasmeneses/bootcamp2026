@@ -129,6 +129,12 @@ Atualmente, as senhas estão salvas em texto puro (ex: `membro123`) no banco de 
 | Método | Endpoint | Descrição |
 | :--- | :--- | :--- |
 | **GET** | `/api/health` | Verifica a integridade e tempo online da API |
+| **GET** | `/docs` | Documentação interativa Swagger UI |
+
+### Autenticação
+| Método | Endpoint | Descrição |
+| :--- | :--- | :--- |
+| **POST** | `/api/auth/login` | Realiza autenticação com e-mail e senha |
 
 ### Usuários
 | Método | Endpoint | Descrição |
@@ -142,7 +148,7 @@ Atualmente, as senhas estão salvas em texto puro (ex: `membro123`) no banco de 
 ### Salas
 | Método | Endpoint | Descrição |
 | :--- | :--- | :--- |
-| **GET** | `/api/salas` | Lista todas as salas |
+| **GET** | `/api/salas` | Lista todas as salas (suporta filtros `disponivel=true`, `dia`, `turno`) |
 | **POST** | `/api/salas` | Cadastra uma nova sala |
 | **GET** | `/api/salas/:id` | Busca detalhes de uma sala específica |
 | **PUT** | `/api/salas/:id` | Atualiza informações de uma sala |
@@ -151,8 +157,7 @@ Atualmente, as senhas estão salvas em texto puro (ex: `membro123`) no banco de 
 ### Reservas
 | Método | Endpoint | Descrição |
 | :--- | :--- | :--- |
-| **GET** | `/api/reservas` | Lista todas as reservas |
+| **GET** | `/api/reservas` | Lista todas as reservas com relacionamentos |
 | **POST** | `/api/reservas` | Cria uma nova reserva de sala |
 | **GET** | `/api/reservas/:id` | Busca detalhes de uma reserva específica |
-| **PUT** | `/api/reservas/:id` | Atualiza informações de uma reserva |
 | **DELETE** | `/api/reservas/:id` | Exclui uma reserva |

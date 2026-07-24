@@ -185,7 +185,7 @@ async function runExhaustiveTests() {
     console.log(`📊 SUÍTE EXAUSTIVA: ${passedCount}/${results.length} testes passaram com SUCESSO!`);
     console.log(`==================================================\n`);
 
-    process.exit(0);
+    process.exit(passedCount === results.length ? 0 : 1);
   }
 }
 
