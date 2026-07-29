@@ -1,0 +1,213 @@
+/* =========================================================
+   ESTILOS GLOBAIS E CLASSES UTILITÁRIAS (VANILLA CSS)
+   Coworking App — Dark Mode Responsivo
+   ========================================================= */
+
+/* Reset Base */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+html,
+body,
+input {
+  color-scheme: dark !important;
+}
+
+body {
+  font-family: "Inter", "Roboto", "Helvetica", "Arial", sans-serif;
+  background-color: #0b0f19;
+  color: #f8fafc;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Fix do ícone do calendário em campos input[type="date"] no dark mode (SVG Branco) */
+input[type="date"]::-webkit-calendar-picker-indicator,
+::-webkit-calendar-picker-indicator {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>') !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 20px 20px !important;
+  filter: none !important;
+  cursor: pointer !important;
+  opacity: 0.9 !important;
+  transition: opacity 0.2s ease, transform 0.2s ease !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+::-webkit-calendar-picker-indicator:hover {
+  opacity: 1 !important;
+  transform: scale(1.1) !important;
+}
+
+
+/* Layout Containers & Screen Utilization */
+.page-wrapper {
+  min-height: 100vh;
+  background-color: #0b0f19;
+  padding-bottom: 48px;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  width: 100%;
+}
+
+/* Navbar */
+.navbar-appbar {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  margin-bottom: 32px !important;
+}
+
+.logo-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.nav-btn {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  padding: 6px 16px !important;
+  border: 1px solid transparent !important;
+  transition: all 0.2s ease !important;
+}
+
+.nav-btn:hover {
+  background-color: rgba(99, 102, 241, 0.2) !important;
+  color: #ffffff !important;
+}
+
+.nav-btn.active {
+  color: #818cf8 !important;
+  background-color: rgba(99, 102, 241, 0.15) !important;
+  border: 1px solid rgba(99, 102, 241, 0.3) !important;
+  font-weight: 700 !important;
+}
+
+.nav-small-btn {
+  color: #94a3b8 !important;
+  font-weight: 400 !important;
+  font-size: 0.85rem !important;
+  transition: color 0.2s ease !important;
+}
+
+.nav-small-btn:hover {
+  color: #ffffff !important;
+}
+
+.nav-small-btn.active {
+  color: #818cf8 !important;
+  font-weight: 700 !important;
+}
+
+.nav-divider {
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding-left: 8px;
+  margin-left: 4px;
+  display: flex;
+  gap: 4px;
+}
+
+/* Card Generico */
+.card-item {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #151c2c !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
+}
+
+.card-item:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(99, 102, 241, 0.15) !important;
+  border-color: rgba(99, 102, 241, 0.4) !important;
+}
+
+/* Painel de Filtro */
+.filter-panel {
+  background-color: #151c2c !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+  margin-bottom: 32px !important;
+}
+
+/* Tabelas */
+.table-paper {
+  background-color: #151c2c !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  overflow-x: auto;
+}
+
+.table-head-row {
+  background-color: #0f172a !important;
+}
+
+.table-head-cell {
+  color: #f8fafc !important;
+  font-weight: 700 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.table-body-row {
+  transition: background-color 0.2s ease;
+}
+
+.table-body-row:hover {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+.table-body-cell {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Page Header */
+.page-header-box {
+  margin-bottom: 32px;
+}
+
+.admin-badge-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+}
+
+.form-auth-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
