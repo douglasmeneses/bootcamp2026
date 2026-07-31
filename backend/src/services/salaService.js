@@ -3,7 +3,7 @@ import { normalizarData } from "../utils/dateUtils.js";
 
 /**
  * Serviço de Salas (salaService)
- * 
+ *
  * 💡 Explicação para iniciantes:
  * Este serviço contém toda a regra de negócio relacionada às salas de coworking.
  * Ele conversa diretamente com o banco de dados PostgreSQL/SQLite via Prisma ORM.
@@ -11,7 +11,7 @@ import { normalizarData } from "../utils/dateUtils.js";
 
 /**
  * Cria uma nova sala de coworking no banco de dados.
- * 
+ *
  * @param {Object} data - Objeto com os dados da sala
  * @param {string} data.nome - Nome da sala (ex: "Sala de Reuniões A")
  * @param {number} data.capacidade - Quantidade máxima de pessoas
@@ -34,12 +34,12 @@ export async function createSala(data) {
 
 /**
  * Busca salas no banco de dados com suporte a filtro opcional por disponibilidade.
- * 
+ *
  * 💡 Explicação do filtro Prisma `none`:
  * Quando `disponivel=true` é enviado na query string, o Prisma faz uma consulta condicional:
  * `where.reservas = { none: { dia, turno } }`.
  * Isso significa: "Retorne apenas as salas que NÃO possuem NENHUMA reserva vinculada para esta data e turno".
- * 
+ *
  * @param {Object} [filters={}] - Objeto contendo os parâmetros de filtro da query string
  * @param {string|boolean} [filters.disponivel] - Flag "true" para filtrar apenas salas disponíveis
  * @param {string} [filters.dia] - Data no formato "YYYY-MM-DD"
@@ -54,14 +54,18 @@ export async function getAllSalas(filters = {}) {
   // Se o filtro de disponibilidade estiver ativo
   if (disponivel === "true" || disponivel === true) {
     if (!dia || !turno) {
-      const error = new Error("Para filtrar por disponibilidade, os parâmetros 'dia' e 'turno' são obrigatórios.");
+      const error = new Error(
+        "Para filtrar por disponibilidade, os parâmetros 'dia' e 'turno' são obrigatórios.",
+      );
       error.status = 400;
       throw error;
     }
 
     const dataReserva = normalizarData(dia);
     if (!dataReserva || isNaN(dataReserva.getTime())) {
-      const error = new Error("A data informada no parâmetro 'dia' é inválida.");
+      const error = new Error(
+        "A data informada no parâmetro 'dia' é inválida.",
+      );
       error.status = 400;
       throw error;
     }
@@ -80,7 +84,7 @@ export async function getAllSalas(filters = {}) {
 
 /**
  * Busca uma sala única pelo seu ID numérico.
- * 
+ *
  * @param {number} id - Identificador único da sala
  * @returns {Promise<Object>} Objeto com os dados da sala
  * @throws {Error} Lança erro 404 Not Found se a sala não for encontrada
@@ -101,7 +105,7 @@ export async function getSalaById(id) {
 
 /**
  * Atualiza as informações de uma sala existente pelo ID.
- * 
+ *
  * @param {number} id - Identificador único da sala a ser atualizada
  * @param {Object} data - Objeto com os campos a serem modificados
  * @returns {Promise<Object>} Objeto da sala após a atualização
@@ -128,7 +132,7 @@ export async function updateSala(id, data) {
 
 /**
  * Exclui uma sala permanentemente do banco de dados.
- * 
+ *
  * @param {number} id - Identificador único da sala a ser excluída
  * @returns {Promise<{success: boolean, message: string}>} Objeto de confirmação
  * @throws {Error} Lança erro 404 Not Found se a sala não existir
