@@ -45,6 +45,16 @@ export const reservasDoUsuario = [
   },
 ];
 
+// Dados do perfil de um usuário cliente mockado
+export const usuarioLogado = {
+  id: 1,
+  nome: "João Silva",
+  email: "joao@email.com",
+  cpf: "123.456.789-00",
+  telefone: "(83) 99873-5555",
+  tipo: "cliente",
+};
+
 // Dados do perfil de um usuário admin mockado
 export const usuarioAdminLogado = {
   nome: "Admin Sistema",

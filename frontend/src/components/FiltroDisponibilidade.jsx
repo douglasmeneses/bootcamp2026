@@ -6,10 +6,8 @@ import {
   MenuItem,
   Button,
   Box,
-  InputAdornment,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 
 // Painel de filtros de disponibilidade (usa classe .filter-panel)
 export default function FiltroDisponibilidade({ dia, onDiaChange, turno, onTurnoChange, onFiltrar }) {

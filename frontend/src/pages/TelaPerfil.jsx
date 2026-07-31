@@ -28,7 +28,9 @@ import { usuarioLogado } from "../data/mockData";
 
 // Tela 5: Perfil do Usuário
 export default function TelaPerfil() {
-  const [usuario, setUsuario] = useState(usuarioLogado);
+  const rawUser = localStorage.getItem("usuario") || localStorage.getItem("usuarioLogado");
+  const initialUser = rawUser ? JSON.parse(rawUser) : usuarioLogado;
+  const [usuario, setUsuario] = useState(initialUser);
 
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
   const [modalRemoverAberto, setModalRemoverAberto] = useState(false);

@@ -17,7 +17,6 @@ import { reservaService } from "../services/reservaService";
 // Tela 3: Salas Disponíveis (Filtro e Reserva)
 export default function TelaSalas() {
   const [salas, setSalas] = useState(salasDisponiveis);
-  const [loading, setLoading] = useState(false);
 
   const [dia, setDia] = useState("2026-07-17");
   const [turno, setTurno] = useState("Manhã");
@@ -27,8 +26,17 @@ export default function TelaSalas() {
   const [mensagemSucesso, setMensagemSucesso] = useState("");
   const [erro, setErro] = useState("");
 
-  const rawUser = localStorage.getItem("usuario") || localStorage.getItem("usuarioLogado");
-  const usuarioLogado = rawUser ? JSON.parse(rawUser) : { id: 1, nome: "Visitante", tipo: "cliente" };
+  const usuarioLogado = (() => {
+    try {
+      const rawUser =
+        localStorage.getItem("usuario") || localStorage.getItem("usuarioLogado");
+      return rawUser
+        ? JSON.parse(rawUser)
+        : { id: 1, nome: "Visitante", tipo: "cliente" };
+    } catch {
+      return { id: 1, nome: "Visitante", tipo: "cliente" };
+    }
+  })();
 
   const handleAbrirModalReserva = (sala) => {
     setSalaSelecionada(sala);
@@ -41,10 +49,12 @@ export default function TelaSalas() {
   };
 
   const handleFiltrar = async () => {
-    setLoading(true);
     setErro("");
     try {
-      const turnoNormalizado = turno.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const turnoNormalizado = turno
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
       const salasRetornadas = await salaService.getAll({
         disponivel: true,
         dia,
@@ -54,13 +64,13 @@ export default function TelaSalas() {
     } catch (err) {
       console.error("Erro ao carregar/filtrar salas:", err);
       setErro(err.message || "Não foi possível obter o filtro das salas");
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     handleFiltrar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleConfirmarReserva = async () => {
@@ -70,7 +80,10 @@ export default function TelaSalas() {
     }
 
     try {
-      const turnoNormalizado = turno.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const turnoNormalizado = turno
+        .toUpperCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
       await reservaService.create({
         idUsuario: usuarioLogado.id,
         idSala: salaSelecionada.id,
@@ -79,7 +92,7 @@ export default function TelaSalas() {
       });
 
       setMensagemSucesso(
-        `Reserva da ${salaSelecionada?.nome} realizada com sucesso para ${dia} (${turno})! 🎉`
+        `Reserva da ${salaSelecionada?.nome} realizada com sucesso para ${dia} (${turno})! 🎉`,
       );
       handleFiltrar();
     } catch (err) {
@@ -105,6 +118,12 @@ export default function TelaSalas() {
           mensagem={mensagemSucesso}
           onFechar={() => setMensagemSucesso("")}
         />
+
+        {erro && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {erro}
+          </Alert>
+        )}
 
         <FiltroDisponibilidade
           dia={dia}

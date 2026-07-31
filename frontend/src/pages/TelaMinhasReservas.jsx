@@ -23,22 +23,33 @@ import { reservaService } from "../services/reservaService";
 export default function TelaMinhasReservas() {
   const navigate = useNavigate();
   const [reservas, setReservas] = useState(reservasDoUsuario);
-  const [loading, setLoading] = useState(false);
 
   const [modalAberto, setModalAberto] = useState(false);
   const [reservaParaCancelar, setReservaParaCancelar] = useState(null);
   const [mensagem, setMensagem] = useState("");
 
-  const rawUser = localStorage.getItem("usuario") || localStorage.getItem("usuarioLogado");
-  const usuarioLogado = rawUser ? JSON.parse(rawUser) : { id: 1, nome: "Visitante", tipo: "cliente" };
+  const usuarioLogado = (() => {
+    try {
+      const rawUser =
+        localStorage.getItem("usuario") || localStorage.getItem("usuarioLogado");
+      return rawUser
+        ? JSON.parse(rawUser)
+        : { id: 1, nome: "Visitante", tipo: "cliente" };
+    } catch {
+      return { id: 1, nome: "Visitante", tipo: "cliente" };
+    }
+  })();
 
   const carregarMinhasReservas = async () => {
-    setLoading(true);
     try {
       const todas = await reservaService.getAll();
       if (Array.isArray(todas)) {
         const filtradas = todas
-          .filter((r) => r.idUsuario === usuarioLogado?.id || r.usuarioId === usuarioLogado?.id)
+          .filter(
+            (r) =>
+              r.idUsuario === usuarioLogado?.id ||
+              r.usuarioId === usuarioLogado?.id,
+          )
           .map((r) => ({
             ...r,
             salaNome: r.sala?.nome || r.salaNome || "Sala",
@@ -48,13 +59,13 @@ export default function TelaMinhasReservas() {
       }
     } catch (err) {
       console.error("Erro ao carregar reservas:", err);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     carregarMinhasReservas();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleAbrirModalCancelar = (reserva) => {
@@ -72,13 +83,19 @@ export default function TelaMinhasReservas() {
       if (reservaParaCancelar?.id) {
         await reservaService.delete(reservaParaCancelar.id);
       }
-      setMensagem(`Reserva da ${reservaParaCancelar?.salaNome || "sala"} cancelada com sucesso! 🎉`);
+      setMensagem(
+        `Reserva da ${reservaParaCancelar?.salaNome || "sala"} cancelada com sucesso! 🎉`,
+      );
       carregarMinhasReservas();
     } catch (err) {
       console.error("Erro ao cancelar reserva:", err);
       // Fallback local update if API fails or mock item
-      setReservas(reservas.filter((r) => r.id !== reservaParaCancelar.id));
-      setMensagem(`Reserva da ${reservaParaCancelar?.salaNome || "sala"} cancelada com sucesso! 🎉`);
+      setReservas((prev) =>
+        prev.filter((r) => r.id !== reservaParaCancelar.id),
+      );
+      setMensagem(
+        `Reserva da ${reservaParaCancelar?.salaNome || "sala"} cancelada com sucesso! 🎉`,
+      );
     } finally {
       handleFecharModal();
     }
@@ -100,7 +117,15 @@ export default function TelaMinhasReservas() {
         />
 
         {reservas.length === 0 ? (
-          <Paper sx={{ p: 4, textAlign: "center", borderRadius: 3, border: "1px dashed rgba(255, 255, 255, 0.15)", backgroundColor: "#151c2c" }}>
+          <Paper
+            sx={{
+              p: 4,
+              textAlign: "center",
+              borderRadius: 3,
+              border: "1px dashed rgba(255, 255, 255, 0.15)",
+              backgroundColor: "#151c2c",
+            }}
+          >
             <Typography variant="h6" color="text.secondary" gutterBottom>
               Você não possui reservas agendadas no momento.
             </Typography>
@@ -108,6 +133,7 @@ export default function TelaMinhasReservas() {
             <Button
               variant="contained"
               startIcon={<MeetingRoomIcon />}
+              onClick={() => navigate("/salas")}
               sx={{ mt: 2 }}
             >
               Ver Salas Disponíveis
