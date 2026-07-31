@@ -11,7 +11,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\backend\\src\\services\\salaService.js"
+            "program": "${workspaceFolder}/backend/src/server.js"
         }
     ]
 }
