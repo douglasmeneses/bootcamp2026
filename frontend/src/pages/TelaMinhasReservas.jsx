@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Container,
   Typography,
@@ -15,15 +16,46 @@ import MeetingRoomIcon from "@mui/icons-material/MeetingRoom";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CancelIcon from "@mui/icons-material/Cancel";
-import { reservasDoUsuario, usuarioLogado } from "../data/mockData";
+import { reservasDoUsuario } from "../data/mockData";
+import { reservaService } from "../services/reservaService";
 
 // Tela 4: Minhas Reservas (Listagem e Cancelamento)
 export default function TelaMinhasReservas() {
+  const navigate = useNavigate();
   const [reservas, setReservas] = useState(reservasDoUsuario);
+  const [loading, setLoading] = useState(false);
 
   const [modalAberto, setModalAberto] = useState(false);
   const [reservaParaCancelar, setReservaParaCancelar] = useState(null);
   const [mensagem, setMensagem] = useState("");
+
+  const rawUser = localStorage.getItem("usuario") || localStorage.getItem("usuarioLogado");
+  const usuarioLogado = rawUser ? JSON.parse(rawUser) : { id: 1, nome: "Visitante", tipo: "cliente" };
+
+  const carregarMinhasReservas = async () => {
+    setLoading(true);
+    try {
+      const todas = await reservaService.getAll();
+      if (Array.isArray(todas)) {
+        const filtradas = todas
+          .filter((r) => r.idUsuario === usuarioLogado?.id || r.usuarioId === usuarioLogado?.id)
+          .map((r) => ({
+            ...r,
+            salaNome: r.sala?.nome || r.salaNome || "Sala",
+            data: r.dia || r.data,
+          }));
+        setReservas(filtradas);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar reservas:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    carregarMinhasReservas();
+  }, []);
 
   const handleAbrirModalCancelar = (reserva) => {
     setReservaParaCancelar(reserva);
@@ -35,10 +67,21 @@ export default function TelaMinhasReservas() {
     setReservaParaCancelar(null);
   };
 
-  const handleConfirmarCancelamento = () => {
-    setReservas(reservas.filter((r) => r.id !== reservaParaCancelar.id));
-    setMensagem(`Reserva da ${reservaParaCancelar.salaNome} cancelada com sucesso! 🎉`);
-    handleFecharModal();
+  const handleConfirmarCancelamento = async () => {
+    try {
+      if (reservaParaCancelar?.id) {
+        await reservaService.delete(reservaParaCancelar.id);
+      }
+      setMensagem(`Reserva da ${reservaParaCancelar?.salaNome || "sala"} cancelada com sucesso! 🎉`);
+      carregarMinhasReservas();
+    } catch (err) {
+      console.error("Erro ao cancelar reserva:", err);
+      // Fallback local update if API fails or mock item
+      setReservas(reservas.filter((r) => r.id !== reservaParaCancelar.id));
+      setMensagem(`Reserva da ${reservaParaCancelar?.salaNome || "sala"} cancelada com sucesso! 🎉`);
+    } finally {
+      handleFecharModal();
+    }
   };
 
   return (

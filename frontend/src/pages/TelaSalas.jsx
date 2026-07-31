@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Container, Chip } from "@mui/material";
+import { useState, useEffect } from "react";
+import { Container, Chip, Alert } from "@mui/material";
 import Navbar from "../components/Navbar";
 import PageHeader from "../components/PageHeader";
 import AlertaMensagem from "../components/AlertaMensagem";
@@ -10,11 +10,14 @@ import MeetingRoomIcon from "@mui/icons-material/MeetingRoom";
 import PeopleIcon from "@mui/icons-material/People";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { salasDisponiveis, usuarioLogado } from "../data/mockData";
+import { salasDisponiveis } from "../data/mockData";
+import { salaService } from "../services/salaService";
+import { reservaService } from "../services/reservaService";
 
 // Tela 3: Salas Disponíveis (Filtro e Reserva)
 export default function TelaSalas() {
-  const [salas] = useState(salasDisponiveis);
+  const [salas, setSalas] = useState(salasDisponiveis);
+  const [loading, setLoading] = useState(false);
 
   const [dia, setDia] = useState("2026-07-17");
   const [turno, setTurno] = useState("Manhã");
@@ -22,6 +25,10 @@ export default function TelaSalas() {
   const [modalAberto, setModalAberto] = useState(false);
   const [salaSelecionada, setSalaSelecionada] = useState(null);
   const [mensagemSucesso, setMensagemSucesso] = useState("");
+  const [erro, setErro] = useState("");
+
+  const rawUser = localStorage.getItem("usuario") || localStorage.getItem("usuarioLogado");
+  const usuarioLogado = rawUser ? JSON.parse(rawUser) : { id: 1, nome: "Visitante", tipo: "cliente" };
 
   const handleAbrirModalReserva = (sala) => {
     setSalaSelecionada(sala);
@@ -33,11 +40,54 @@ export default function TelaSalas() {
     setSalaSelecionada(null);
   };
 
-  const handleConfirmarReserva = () => {
-    setMensagemSucesso(
-      `Reserva da ${salaSelecionada?.nome} realizada com sucesso para ${dia} (${turno})! 🎉`
-    );
-    handleFecharModal();
+  const handleFiltrar = async () => {
+    setLoading(true);
+    setErro("");
+    try {
+      const turnoNormalizado = turno.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const salasRetornadas = await salaService.getAll({
+        disponivel: true,
+        dia,
+        turno: turnoNormalizado,
+      });
+      setSalas(salasRetornadas);
+    } catch (err) {
+      console.error("Erro ao carregar/filtrar salas:", err);
+      setErro(err.message || "Não foi possível obter o filtro das salas");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    handleFiltrar();
+  }, []);
+
+  const handleConfirmarReserva = async () => {
+    if (!usuarioLogado || !usuarioLogado.id) {
+      alert("Você precisa estar logado para realizar uma reserva.");
+      return;
+    }
+
+    try {
+      const turnoNormalizado = turno.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      await reservaService.create({
+        idUsuario: usuarioLogado.id,
+        idSala: salaSelecionada.id,
+        dia,
+        turno: turnoNormalizado,
+      });
+
+      setMensagemSucesso(
+        `Reserva da ${salaSelecionada?.nome} realizada com sucesso para ${dia} (${turno})! 🎉`
+      );
+      handleFiltrar();
+    } catch (err) {
+      console.error("Erro ao criar reserva:", err);
+      alert(err.message || "Erro ao realizar reserva. Tente novamente.");
+    } finally {
+      handleFecharModal();
+    }
   };
 
   return (
@@ -61,7 +111,7 @@ export default function TelaSalas() {
           onDiaChange={setDia}
           turno={turno}
           onTurnoChange={setTurno}
-          onFiltrar={() => {}}
+          onFiltrar={handleFiltrar}
         />
 
         <div className="cards-grid">
@@ -76,7 +126,11 @@ export default function TelaSalas() {
                     icon={<PeopleIcon />}
                     label={`Capacidade: ${sala.capacidade} pessoas`}
                     size="small"
-                    sx={{ backgroundColor: "rgba(255, 255, 255, 0.06)", color: "#f8fafc", fontWeight: 500 }}
+                    sx={{
+                      backgroundColor: "rgba(255, 255, 255, 0.06)",
+                      color: "#f8fafc",
+                      fontWeight: 500,
+                    }}
                   />
                   <Chip
                     icon={<AttachMoneyIcon />}
@@ -103,8 +157,8 @@ export default function TelaSalas() {
           <>
             Deseja confirmar a reserva da{" "}
             <strong>{salaSelecionada?.nome}</strong> para o dia{" "}
-            <strong>{dia}</strong> no turno da <strong>{turno}</strong> pelo valor de{" "}
-            <strong>R$ {salaSelecionada?.preco}/turno</strong>?
+            <strong>{dia}</strong> no turno da <strong>{turno}</strong> pelo
+            valor de <strong>R$ {salaSelecionada?.preco}/turno</strong>?
           </>
         }
         textoBotaoConfirmar="Confirmar Reserva"

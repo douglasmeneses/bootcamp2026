@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import PersonAddOutlinedIcon from "@mui/icons-material/PersonAddOutlined";
 import AlertaMensagem from "../components/AlertaMensagem";
+import { usuarioService } from "../services/usuarioService";
 
 // Tela 2: Cadastro de Usuário
 export default function TelaCadastro() {
@@ -33,7 +34,7 @@ export default function TelaCadastro() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.nome || !form.email || !form.cpf || !form.senha) {
       setErro("Preencha todos os campos obrigatórios.");
@@ -45,17 +46,47 @@ export default function TelaCadastro() {
     }
 
     setErro("");
-    setMensagemSucesso("Cadastro realizado com sucesso! Redirecionando para login... 🎉");
 
-    setTimeout(() => {
-      navigate("/login");
-    }, 500);
+    try {
+      const novoUsuario = {
+        nome: form.nome,
+        email: form.email,
+        cpf: form.cpf,
+        telefone: form.telefone,
+        senha: form.senha,
+      };
+      await usuarioService.cadastrar(novoUsuario);
+      setMensagemSucesso(
+        "Cadastro realizado com sucesso! Redirecionando para login... 🎉",
+      );
+      setTimeout(() => {
+        navigate("/login");
+      }, 1000);
+    } catch (err) {
+      setErro(err.message || "Erro ao realizar cadastro");
+    }
   };
 
   return (
-    <Box sx={{ minHeight: "100vh", backgroundColor: "background.default", display: "flex", alignItems: "center", py: 4 }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        backgroundColor: "background.default",
+        display: "flex",
+        alignItems: "center",
+        py: 4,
+      }}
+    >
       <Container maxWidth="xs">
-        <Paper elevation={3} sx={{ p: 4, borderRadius: 3, textAlign: "center", backgroundColor: "#151c2c" }}>
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            borderRadius: 3,
+            textAlign: "center",
+            backgroundColor: "#151c2c",
+          }}
+        >
           <Box className="form-auth-icon">
             <PersonAddOutlinedIcon fontSize="large" />
           </Box>

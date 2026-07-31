@@ -5,39 +5,31 @@
 // Futuramente, esses dados virão de chamadas à API.
 // =========================================================
 
-// Salas disponíveis para reserva (visão do cliente)
+// Reservas do usuário logado (visão "Minhas Reservas")
 export const salasDisponiveis = [
   {
     id: 1,
     nome: "Sala Auditório",
     capacidade: 50,
     preco: 150,
-    descricao: "Espaço amplo ideal para eventos, palestras e workshops.",
+    descricao: "Espaço amplo com projetor 4K e sistema de som profissional.",
   },
   {
     id: 2,
     nome: "Sala Reuniões A",
     capacidade: 10,
     preco: 50,
-    descricao: "Equipada com TV 55', quadro branco e videoconferência.",
+    descricao: "Mesa oval de reuniões com lousa de vidro e TV para apresentações.",
   },
   {
     id: 3,
-    nome: "Sala Reuniões B",
-    capacidade: 10,
-    preco: 70,
-    descricao: "Excelente para reuniões corporativas com isolamento termoacústico.",
-  },
-  {
-    id: 4,
-    nome: "Sala Atendimento Cliente",
-    capacidade: 3,
-    preco: 30,
-    descricao: "Ambiente reservado e confortável para conversas individuais.",
+    nome: "Sala Estúdio",
+    capacidade: 8,
+    preco: 40,
+    descricao: "Isolamento acústico avançado e microfones para gravação de podcast.",
   },
 ];
 
-// Reservas do usuário logado (visão "Minhas Reservas")
 export const reservasDoUsuario = [
   {
     id: 101,
@@ -52,15 +44,6 @@ export const reservasDoUsuario = [
     turno: "Manhã",
   },
 ];
-
-// Dados do perfil do usuário logado (inclui tipo de usuário)
-export const usuarioLogado = {
-  nome: "João Silva",
-  email: "joao@email.com",
-  cpf: "123.456.789-00",
-  telefone: "(83) 99873-5555",
-  tipo: "cliente", // 'cliente' | 'admin'
-};
 
 // Dados do perfil de um usuário admin mockado
 export const usuarioAdminLogado = {

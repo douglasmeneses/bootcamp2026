@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import AlertaMensagem from "../components/AlertaMensagem";
+import { authService } from "../services/authService";
 
 // Tela 1: Login de Usuário
 export default function TelaLogin() {
@@ -22,28 +23,51 @@ export default function TelaLogin() {
   const [erro, setErro] = useState("");
   const [mensagemSucesso, setMensagemSucesso] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !senha) {
       setErro("Por favor, preencha todos os campos.");
       return;
     }
     setErro("");
-    setMensagemSucesso("Login realizado com sucesso! Redirecionando... 🎉");
-    
-    setTimeout(() => {
-      if (email.toLowerCase().includes("admin")) {
-        navigate("/admin");
-      } else {
-        navigate("/salas");
-      }
-    }, 500);
+    try {
+      const usuarioLogado = await authService.login(email, senha);
+      localStorage.setItem("usuario", JSON.stringify(usuarioLogado));
+      localStorage.setItem("usuarioLogado", JSON.stringify(usuarioLogado));
+      setMensagemSucesso("Login realizado com sucesso! Redirecionando... 🎉");
+      setTimeout(() => {
+        if (usuarioLogado?.tipo === "admin" || usuarioLogado?.eAdmin === "true" || usuarioLogado?.eAdmin === true) {
+          navigate("/admin");
+        } else {
+          navigate("/salas");
+        }
+      }, 500);
+    } catch (err) {
+      //http status 4xx ou 5xx
+      setErro(err.message || "Email ou senha incorretos");
+    }
   };
 
   return (
-    <Box sx={{ minHeight: "100vh", backgroundColor: "background.default", display: "flex", alignItems: "center", py: 4 }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        backgroundColor: "background.default",
+        display: "flex",
+        alignItems: "center",
+        py: 4,
+      }}
+    >
       <Container maxWidth="xs">
-        <Paper elevation={3} sx={{ p: 4, borderRadius: 3, textAlign: "center", backgroundColor: "#151c2c" }}>
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            borderRadius: 3,
+            textAlign: "center",
+            backgroundColor: "#151c2c",
+          }}
+        >
           <Box className="form-auth-icon">
             <LockOutlinedIcon fontSize="large" />
           </Box>
@@ -52,7 +76,8 @@ export default function TelaLogin() {
             Acessar Conta
           </Typography>
           <Typography variant="body2" color="text.secondary" mb={3}>
-            Entre com suas credenciais para gerenciar suas reservas no Coworking App
+            Entre com suas credenciais para gerenciar suas reservas no Coworking
+            App
           </Typography>
 
           <AlertaMensagem
